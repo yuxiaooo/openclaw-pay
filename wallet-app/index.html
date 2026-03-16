@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🐾 OpenClaw Wallet</title>
+  <style>
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #12121a;
+      --bg-card: #1a1a2e;
+      --bg-card-hover: #222240;
+      --accent: #7c3aed;
+      --accent-light: #a78bfa;
+      --accent-glow: rgba(124, 58, 237, 0.3);
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border: #2a2a3e;
+      --radius: 12px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      padding: 30px 0 20px;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent-light), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 4px;
+    }
+
+    .header .subtitle {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* Connection Status */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px;
+      margin-bottom: 24px;
+      border-radius: var(--radius);
+      background: var(--bg-secondary);
+      font-size: 13px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--danger);
+    }
+
+    .status-dot.connected {
+      background: var(--success);
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+    }
+
+    /* Wallet Info */
+    .wallet-info {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 24px;
+      border: 1px solid var(--border);
+    }
+
+    .wallet-info .address {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 13px;
+      color: var(--accent-light);
+      word-break: break-all;
+      margin-top: 8px;
+    }
+
+    .wallet-info .balance {
+      font-size: 32px;
+      font-weight: 700;
+      margin-top: 16px;
+    }
+
+    .wallet-info .balance-usd {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* Section Title */
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge {
+      background: var(--accent);
+      color: white;
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 500;
+    }
+
+    /* Auth Request Card */
+    .auth-card {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+      animation: slideIn 0.3s ease;
+      transition: border-color 0.2s;
+    }
+
+    .auth-card:hover {
+      border-color: var(--accent);
+    }
+
+    .auth-card.pending {
+      border-left: 3px solid var(--warning);
+    }
+
+    .auth-card.auto-approved {
+      border-left: 3px solid var(--accent);
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .auth-card .agent-name {
+      color: var(--accent-light);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .auth-card .amount {
+      font-size: 24px;
+      font-weight: 700;
+      margin: 12px 0;
+    }
+
+    .auth-card .details {
+      display: grid;
+      gap: 8px;
+      margin: 16px 0;
+    }
+
+    .auth-card .detail-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+    }
+
+    .auth-card .detail-row .label {
+      color: var(--text-muted);
+    }
+
+    .auth-card .detail-row .value {
+      color: var(--text-secondary);
+      font-family: 'SF Mono', monospace;
+      font-size: 12px;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .auth-card .reason {
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin: 12px 0;
+    }
+
+    .auth-card .reason::before {
+      content: "💬 ";
+    }
+
+    .auth-card .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-approve {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-approve:hover {
+      background: #059669;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-reject {
+      background: var(--bg-secondary);
+      color: var(--danger);
+      border: 1px solid var(--danger);
+    }
+
+    .btn-reject:hover {
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    /* Timer */
+    .timer {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-state .icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    /* History */
+    .history-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px;
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      margin-bottom: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .history-item .icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .history-item .icon.approved { background: rgba(16, 185, 129, 0.1); }
+    .history-item .icon.rejected { background: rgba(239, 68, 68, 0.1); }
+
+    .history-item .info { flex: 1; }
+    .history-item .info .title { font-size: 14px; font-weight: 500; }
+    .history-item .info .time { font-size: 12px; color: var(--text-muted); }
+    .history-item .amount-col { text-align: right; }
+    .history-item .amount-col .amt { font-weight: 600; font-size: 14px; }
+    .history-item .amount-col .status { font-size: 11px; }
+    .history-item .amount-col .status.approved { color: var(--success); }
+    .history-item .amount-col .status.rejected { color: var(--danger); }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--bg-secondary);
+      border-radius: var(--radius);
+      padding: 4px;
+      margin-bottom: 24px;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 0.2s;
+    }
+
+    .tab.active {
+      background: var(--bg-card);
+      color: var(--text-primary);
+    }
+
+    /* Setup Screen */
+    .setup {
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .setup input {
+      width: 100%;
+      padding: 14px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 15px;
+      margin-bottom: 12px;
+      outline: none;
+    }
+
+    .setup input:focus {
+      border-color: var(--accent);
+    }
+
+    .setup .btn-primary {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .setup .btn-primary:hover {
+      background: #6d28d9;
+    }
+
+    .setup .or {
+      color: var(--text-muted);
+      margin: 16px 0;
+      font-size: 14px;
+    }
+
+    .notification {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 100;
+      animation: fadeInOut 3s ease forwards;
+      box-shadow: 0 4px 20px var(--accent-glow);
+    }
+
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+      10% { opacity: 1; transform: translateX(-50%) translateY(0); }
+      80% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <!-- Rendered by JS -->
+  </div>
+
+  <script>
+    // ============================================================
+    // OpenClaw Wallet App
+    // ============================================================
+
+    const SERVER_URL = 'ws://localhost:3100';
+    const API_URL = 'http://localhost:3100/api';
+
+    let ws = null;
+    let walletAddress = localStorage.getItem('openclaw_wallet_address') || '';
+    let walletPrivateKey = localStorage.getItem('openclaw_wallet_key') || '';
+    let pendingRequests = [];
+    let history = [];
+    let activeTab = 'requests';
+    let connected = false;
+
+    // ============================================================
+    // Render
+    // ============================================================
+
+    function render() {
+      const app = document.getElementById('app');
+
+      if (!walletAddress) {
+        app.innerHTML = renderSetup();
+        return;
+      }
+
+      app.innerHTML = `
+        ${renderHeader()}
+        ${renderStatusBar()}
+        ${renderWalletInfo()}
+        ${renderTabs()}
+        ${activeTab === 'requests' ? renderRequests() : renderHistory()}
+      `;
+    }
+
+    function renderHeader() {
+      return `
+        <div class="header">
+          <h1>🐾 OpenClaw Wallet</h1>
+          <div class="subtitle">AI-Native Payment Authorization</div>
+        </div>
+      `;
+    }
+
+    function renderStatusBar() {
+      return `
+        <div class="status-bar">
+          <div class="status-dot ${connected ? 'connected' : ''}"></div>
+          <span>${connected ? 'Connected to Authorization Server' : 'Disconnected'}</span>
+        </div>
+      `;
+    }
+
+    function renderWalletInfo() {
+      return `
+        <div class="wallet-info">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:14px;font-weight:500">My Wallet</span>
+            <span style="font-size:12px;color:var(--text-muted);cursor:pointer" onclick="logout()">🔒 Lock</span>
+          </div>
+          <div class="address">${walletAddress}</div>
+          <div class="balance">Testnet Wallet</div>
+          <div class="balance-usd">Sepolia Testnet</div>
+        </div>
+      `;
+    }
+
+    function renderTabs() {
+      return `
+        <div class="tabs">
+          <div class="tab ${activeTab === 'requests' ? 'active' : ''}" onclick="switchTab('requests')">
+            Requests ${pendingRequests.length > 0 ? `<span class="badge">${pendingRequests.length}</span>` : ''}
+          </div>
+          <div class="tab ${activeTab === 'history' ? 'active' : ''}" onclick="switchTab('history')">
+            History
+          </div>
+        </div>
+      `;
+    }
+
+    function renderRequests() {
+      if (pendingRequests.length === 0) {
+        return `
+          <div class="empty-state">
+            <div class="icon">🔐</div>
+            <div>No pending requests</div>
+            <div style="font-size:13px;margin-top:8px;color:var(--text-muted)">
+              When an AI Agent needs to pay,<br>you'll see the request here
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="section-title">
+          Pending Approvals <span class="badge pulse">${pendingRequests.length}</span>
+        </div>
+        ${pendingRequests.map(req => renderAuthCard(req)).join('')}
+      `;
+    }
+
+    function renderAuthCard(req) {
+      const intent = req.intent;
+      const isAutoApproved = req.status === 'auto_approved';
+      const timeLeft = Math.max(0, Math.floor((req.expiresAt - Date.now()) / 1000));
+
+      return `
+        <div class="auth-card ${isAutoApproved ? 'auto-approved' : 'pending'}">
+          <div class="agent-name">🤖 Agent: ${intent.agentId}</div>
+          <div class="amount">${intent.payment.displayAmount}</div>
+
+          <div class="reason">${intent.reason}</div>
+
+          <div class="details">
+            <div class="detail-row">
+              <span class="label">Recipient</span>
+              <span class="value">${intent.payment.to}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Chain</span>
+              <span class="value">Chain ID: ${intent.payment.chainId}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Intent ID</span>
+              <span class="value">${intent.id.substring(0, 16)}...</span>
+            </div>
+          </div>
+
+          ${isAutoApproved ? `
+            <div style="text-align:center;color:var(--accent-light);font-size:13px;margin-bottom:12px">
+              ⚡ Auto-approved by policy — Confirm to proceed
+            </div>
+          ` : ''}
+
+          <div class="actions">
+            <button class="btn btn-reject" onclick="rejectRequest('${req.id}', '${intent.id}')">
+              ✕ Reject
+            </button>
+            <button class="btn btn-approve" onclick="approveRequest('${req.id}', '${intent.id}')">
+              ✓ Approve
+            </button>
+          </div>
+
+          <div class="timer" id="timer-${req.id}">⏱ Expires in ${timeLeft}s</div>
+        </div>
+      `;
+    }
+
+    function renderHistory() {
+      if (history.length === 0) {
+        return `
+          <div class="empty-state">
+            <div class="icon">📋</div>
+            <div>No transaction history</div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="section-title">Transaction History</div>
+        ${history.map(item => `
+          <div class="history-item">
+            <div class="icon ${item.status}">${item.status === 'approved' ? '✅' : '❌'}</div>
+            <div class="info">
+              <div class="title">${item.reason}</div>
+              <div class="time">${new Date(item.time).toLocaleString()}</div>
+            </div>
+            <div class="amount-col">
+              <div class="amt">${item.amount}</div>
+              <div class="status ${item.status}">${item.status}</div>
+            </div>
+          </div>
+        `).join('')}
+      `;
+    }
+
+    function renderSetup() {
+      return `
+        ${renderHeader()}
+        <div class="setup">
+          <div style="font-size:48px;margin-bottom:20px">🔑</div>
+          <h2 style="margin-bottom:8px">Setup Wallet</h2>
+          <p style="color:var(--text-muted);margin-bottom:24px;font-size:14px">
+            Create a new wallet or import an existing one
+          </p>
+
+          <button class="btn-primary" onclick="createNewWallet()">
+            🆕 Create New Wallet
+          </button>
+
+          <div class="or">— or import existing —</div>
+
+          <input id="importKey" type="password" placeholder="Enter private key (0x...)" />
+          <button class="btn-primary" onclick="importWallet()">
+            📥 Import Private Key
+          </button>
+        </div>
+      `;
+    }
+
+    // ============================================================
+    // Actions
+    // ============================================================
+
+    function createNewWallet() {
+      // 使用简单的随机生成 (ethers.js 太大，这里用轻量方案)
+      // 在生产环境应该用 ethers.js 或 Web Crypto API
+      const array = new Uint8Array(32);
+      crypto.getRandomValues(array);
+      const privateKey = '0x' + Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('');
+
+      // 简易公钥推导 — 生产环境请用 ethers.js
+      // 这里我们生成一个模拟地址
+      const addressArray = new Uint8Array(20);
+      crypto.getRandomValues(addressArray);
+      const address = '0x' + Array.from(addressArray).map(b => b.toString(16).padStart(2, '0')).join('');
+
+      walletPrivateKey = privateKey;
+      walletAddress = address;
+      localStorage.setItem('openclaw_wallet_key', privateKey);
+      localStorage.setItem('openclaw_wallet_address', address);
+
+      showNotification('🎉 Wallet created successfully!');
+      connectWS();
+      render();
+    }
+
+    function importWallet() {
+      const key = document.getElementById('importKey').value.trim();
+      if (!key || !key.startsWith('0x') || key.length !== 66) {
+        showNotification('❌ Invalid private key format');
+        return;
+      }
+
+      walletPrivateKey = key;
+      // 模拟地址推导
+      const addressArray = new Uint8Array(20);
+      crypto.getRandomValues(addressArray);
+      walletAddress = '0x' + Array.from(addressArray).map(b => b.toString(16).padStart(2, '0')).join('');
+
+      localStorage.setItem('openclaw_wallet_key', key);
+      localStorage.setItem('openclaw_wallet_address', walletAddress);
+
+      showNotification('✅ Wallet imported!');
+      connectWS();
+      render();
+    }
+
+    function logout() {
+      walletAddress = '';
+      walletPrivateKey = '';
+      localStorage.removeItem('openclaw_wallet_key');
+      localStorage.removeItem('openclaw_wallet_address');
+      if (ws) ws.close();
+      render();
+    }
+
+    function switchTab(tab) {
+      activeTab = tab;
+      render();
+    }
+
+    async function approveRequest(requestId, intentId) {
+      // 模拟签名交易 (生产环境应使用真实签名)
+      const txHashArray = new Uint8Array(32);
+      crypto.getRandomValues(txHashArray);
+      const txHash = '0x' + Array.from(txHashArray).map(b => b.toString(16).padStart(2, '0')).join('');
+
+      const response = {
+        type: 'auth_response',
+        data: {
+          requestId,
+          intentId,
+          status: 'approved',
+          signedTransaction: '0x' + 'f'.repeat(64), // 模拟签名
+          txHash,
+          respondedAt: Date.now(),
+          walletAddress,
+        }
+      };
+
+      // 保存到历史
+      const req = pendingRequests.find(r => r.id === requestId);
+      if (req) {
+        history.unshift({
+          status: 'approved',
+          reason: req.intent.reason,
+          amount: req.intent.payment.displayAmount,
+          to: req.intent.payment.to,
+          txHash,
+          time: Date.now(),
+        });
+      }
+
+      // 发送
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(response));
+      }
+
+      // 移除请求
+      pendingRequests = pendingRequests.filter(r => r.id !== requestId);
+      showNotification('✅ Payment approved!');
+      render();
+    }
+
+    async function rejectRequest(requestId, intentId) {
+      const response = {
+        type: 'auth_response',
+        data: {
+          requestId,
+          intentId,
+          status: 'rejected',
+          rejectReason: 'User rejected the payment',
+          respondedAt: Date.now(),
+          walletAddress,
+        }
+      };
+
+      // 保存到历史
+      const req = pendingRequests.find(r => r.id === requestId);
+      if (req) {
+        history.unshift({
+          status: 'rejected',
+          reason: req.intent.reason,
+          amount: req.intent.payment.displayAmount,
+          to: req.intent.payment.to,
+          time: Date.now(),
+        });
+      }
+
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(response));
+      }
+
+      pendingRequests = pendingRequests.filter(r => r.id !== requestId);
+      showNotification('❌ Payment rejected');
+      render();
+    }
+
+    // ============================================================
+    // WebSocket
+    // ============================================================
+
+    function connectWS() {
+      if (ws) ws.close();
+
+      ws = new WebSocket(SERVER_URL);
+
+      ws.onopen = () => {
+        connected = true;
+        console.log('[Wallet] Connected to server');
+
+        // 注册钱包
+        ws.send(JSON.stringify({
+          type: 'wallet_register',
+          data: { address: walletAddress }
+        }));
+
+        render();
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          handleMessage(msg);
+        } catch (e) {
+          console.error('[Wallet] Parse error:', e);
+        }
+      };
+
+      ws.onclose = () => {
+        connected = false;
+        console.log('[Wallet] Disconnected, reconnecting in 3s...');
+        render();
+        setTimeout(connectWS, 3000);
+      };
+
+      ws.onerror = (err) => {
+        console.error('[Wallet] WebSocket error');
+      };
+    }
+
+    function handleMessage(msg) {
+      switch (msg.type) {
+        case 'auth_request':
+          console.log('[Wallet] New auth request:', msg.data);
+          // 避免重复
+          if (!pendingRequests.find(r => r.id === msg.data.id)) {
+            pendingRequests.push(msg.data);
+            showNotification('🔔 New payment request!');
+
+            // 播放提示音
+            try {
+              const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+              const oscillator = audioCtx.createOscillator();
+              const gainNode = audioCtx.createGain();
+              oscillator.connect(gainNode);
+              gainNode.connect(audioCtx.destination);
+              oscillator.frequency.value = 800;
+              gainNode.gain.value = 0.1;
+              oscillator.start();
+              setTimeout(() => oscillator.stop(), 200);
+            } catch (e) {}
+
+            render();
+          }
+          break;
+
+        case 'pong':
+          break;
+      }
+    }
+
+    // ============================================================
+    // Utils
+    // ============================================================
+
+    function showNotification(text) {
+      const div = document.createElement('div');
+      div.className = 'notification';
+      div.textContent = text;
+      document.body.appendChild(div);
+      setTimeout(() => div.remove(), 3000);
+    }
+
+    // 定时刷新倒计时 (只更新文本，不重绘整个页面)
+    setInterval(() => {
+      const now = Date.now();
+      const prevCount = pendingRequests.length;
+
+      // 移除过期请求
+      pendingRequests = pendingRequests.filter(r => r.expiresAt > now);
+
+      // 如果有请求被移除（过期），才全量重绘
+      if (pendingRequests.length !== prevCount) {
+        render();
+        return;
+      }
+
+      // 否则只更新倒计时文本
+      for (const req of pendingRequests) {
+        const timerEl = document.getElementById('timer-' + req.id);
+        if (timerEl) {
+          const timeLeft = Math.max(0, Math.floor((req.expiresAt - now) / 1000));
+          timerEl.textContent = '⏱ Expires in ' + timeLeft + 's';
+        }
+      }
+    }, 1000);
+
+    // ============================================================
+    // Init
+    // ============================================================
+
+    render();
+    if (walletAddress) {
+      connectWS();
+    }
+  </script>
+</body>
+</html>

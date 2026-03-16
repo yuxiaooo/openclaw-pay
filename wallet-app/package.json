@@ -1,0 +1,8 @@
+{
+  "name": "openclaw-wallet-app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "npx --yes serve -s . -l 3101"
+  }
+}

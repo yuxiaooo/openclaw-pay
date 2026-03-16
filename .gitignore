@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.openclaw/
+*.js.map
+*.d.ts.map
+
+# 安全文件
+keystore.json
+*.salt
+*.key
+.env
