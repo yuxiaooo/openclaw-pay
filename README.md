@@ -54,6 +54,18 @@ AI Agent creates PaymentIntent → Protocol routes to Wallet → User approves i
 └─────────────────────────────────────────────────────────────┘
 ```
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/images/wallet-approval.png" width="380" alt="Payment Approval Request" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="docs/images/wallet-history.png" width="380" alt="Transaction History" />
+</p>
+
+<p align="center">
+  <em>Left: AI Agent payment request awaiting user approval &nbsp;|&nbsp; Right: Transaction history with approved payments</em>
+</p>
+
 ## How It Works
 
 ### Core Flow
